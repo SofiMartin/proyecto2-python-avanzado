@@ -6,8 +6,8 @@ Integrantes: *completar*
 
 | Parte | Contenido | Abrir en Colab |
 |---|---|---|
-| 1. fotoapp | [`parte1_fotoapp/fotoapp.py`](parte1_fotoapp/fotoapp.py) (módulo) y [`fotoapp_testdev.ipynb`](parte1_fotoapp/fotoapp_testdev.ipynb) (pruebas) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/SofiMartin/proyecto2-python-avanzado/blob/main/parte1_fotoapp/fotoapp_testdev.ipynb) |
-| 2. Regresión | [`parte2_regresion/regresion_lineal_multiple.ipynb`](parte2_regresion/regresion_lineal_multiple.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/SofiMartin/proyecto2-python-avanzado/blob/main/parte2_regresion/regresion_lineal_multiple.ipynb) |
+| 1. fotoapp | [`parte1_fotoapp/fotoapp.py`](parte1_fotoapp/fotoapp.py) (módulo) y [`fotoapp_testdev.ipynb`](parte1_fotoapp/fotoapp_testdev.ipynb) (pruebas) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/SofiMartin/proyecto2-python-avanzado/blob/master/proyecto2-python-avanzado/parte1_fotoapp/fotoapp_testdev.ipynb) |
+| 2. Regresión | [`parte2_regresion/regresion_lineal_multiple.ipynb`](parte2_regresion/regresion_lineal_multiple.ipynb) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/SofiMartin/proyecto2-python-avanzado/blob/master/proyecto2-python-avanzado/parte2_regresion/regresion_lineal_multiple.ipynb) |
 
 ```
 proyecto2-python-avanzado/
@@ -16,6 +16,7 @@ proyecto2-python-avanzado/
 ├── parte1_fotoapp/
 │   ├── fotoapp.py                 # módulo con todas las funciones + menú
 │   ├── fotoapp_testdev.ipynb      # notebook de pruebas
+│   ├── fotos_mejoradas/           # resultados del menú (fotos redimensionadas y figuras)
 │   └── imagenes/
 │       ├── originales/            # fotos de prueba (+ CREDITOS.md)
 │       └── generadas/             # figuras e imágenes generadas
@@ -49,7 +50,7 @@ proyecto2-python-avanzado/
 | 2 | `ecualizar_histograma(imagen, ruta_figura)` | Ecualiza el histograma de la luminancia (canal Y de YCbCr, algoritmo de la CDF implementado con NumPy) y muestra/guarda una figura con la foto original, la ecualizada y sus histogramas. Probada con una foto oscura y otra con exceso de luz. |
 | 3 | `aplicar_filtro(imagen, filtro, ruta_figura)` | Aplica uno de los 9 filtros de Pillow (por número 1-9 o por nombre) y muestra/guarda la original y la filtrada lado a lado. |
 | 4 | `boceto(imagen, tecnica, **parametros)` y `comparar_bocetos(...)` | Boceto de líneas negras sobre fondo blanco con **umbral adaptativo**, **Sobel**, **Laplaciano**, **Canny** o efecto **lápiz**. Parámetros ajustables y comparación lado a lado. |
-| 5 | `menu()` | Menú por consola. Obliga a pasar primero por la función 1 y valida todo con excepciones. |
+| 5 | `main()` / `menu()` | Menú por consola. Obliga a pasar primero por la función 1 y valida todo con excepciones. Guarda todos los resultados en la carpeta `fotos_mejoradas`. |
 
 **Excepciones propias:** `FotoAppError` (base), `ImagenNoCargadaError`, `RedSocialInvalidaError`, `FiltroInvalidoError` y `TecnicaInvalidaError`. Todas las funciones de edición llaman a `_validar_imagen()`, que lanza `ImagenNoCargadaError` si todavía no se leyó ninguna imagen. Así el usuario no puede saltearse la lectura.
 
@@ -57,7 +58,7 @@ proyecto2-python-avanzado/
 
 ```mermaid
 flowchart TD
-    A([Inicio: python fotoapp.py / fotoapp.menu]) --> B[imagen_actual = None]
+    A([Inicio: python fotoapp.py → main]) --> B[imagen_actual = None]
     B --> C[/Mostrar menú y leer opción/]
     C --> D{Opción}
 
@@ -69,20 +70,20 @@ flowchart TD
     F -->|No| ERR[Mostrar error] --> C
     F -->|Sí| G{¿Se pudo leer la imagen?}
     G -->|No: archivo inexistente, URL caída o no es imagen| ERR
-    G -->|Sí| H[Redimensionar sin distorsión<br/>imagen_actual = resultado] --> C
+    G -->|Sí| H[Redimensionar sin distorsión<br/>imagen_actual = resultado<br/>guardar en fotos_mejoradas] --> C
 
     D -->|2, 3, 4 o 5| V{¿imagen_actual cargada?}
     V -->|No| W[ImagenNoCargadaError:<br/>'Primero usá la opción 1'] --> C
     V -->|Sí| S{¿Qué opción?}
 
-    S -->|2| I[Ecualizar histograma<br/>mostrar y guardar figura]
+    S -->|2| I[Ecualizar histograma<br/>mostrar y guardar figura<br/>en fotos_mejoradas]
     S -->|3| J[/Elegir filtro 1-9/] --> J2{¿Filtro válido?}
     J2 -->|No| ERR
-    J2 -->|Sí| J3[Aplicar filtro<br/>mostrar y guardar figura]
+    J2 -->|Sí| J3[Aplicar filtro<br/>mostrar y guardar figura<br/>en fotos_mejoradas]
     S -->|4| K[/Elegir técnica de boceto/] --> K2{¿Técnica válida?}
     K2 -->|No| ERR
-    K2 -->|Sí| K3[Generar boceto<br/>mostrar y guardar figura]
-    S -->|5| L[/Pedir nombre de archivo/] --> L2[Guardar imagen_actual] --> C
+    K2 -->|Sí| K3[Generar boceto<br/>mostrar y guardar figura<br/>en fotos_mejoradas]
+    S -->|5| L[/Pedir nombre de archivo/] --> L2[Guardar imagen_actual en fotos_mejoradas] --> C
 
     I --> U{¿Usar resultado como imagen actual?}
     J3 --> U
