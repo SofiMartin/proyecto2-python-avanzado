@@ -2,7 +2,7 @@
 
 **Programación Python Avanzada — Tecnicatura Universitaria en Tecnologías de Programación — 2026**
 
-Integrantes: *completar*
+Integrantes: Sofia Martin, Laura Sofía Pérez Llanqueleo
 
 | Parte | Contenido | Abrir en Colab |
 |---|---|---|
@@ -46,13 +46,13 @@ proyecto2-python-avanzado/
 
 | # | Función | Qué hace |
 |---|---|---|
-| 1 | `redimensionar_para_red(ruta, red_social, modo="recortar")` | Lee la foto (archivo local, Google Drive o URL) y la lleva al tamaño recomendado de **YouTube (1280×720)**, **Instagram (1080×1080)**, **Twitter/X (1600×900)** o **Facebook (1200×630)** sin distorsionarla. Lo hace recortando centrado (`ImageOps.fit`) o ajustando con bandas (`ImageOps.pad`). |
-| 2 | `ecualizar_histograma(imagen, ruta_figura)` | Ecualiza el histograma de la luminancia (canal Y de YCbCr, algoritmo de la CDF implementado con NumPy) y muestra/guarda una figura con la foto original, la ecualizada y sus histogramas. Probada con una foto oscura y otra con exceso de luz. |
+| 1 | `redimensionar_para_red(ruta, red_social, modo="recortar")` | Lee la foto (archivo local, Google Drive o URL) y la lleva al tamaño recomendado de **YouTube (1280×720)**, **Instagram (1080×1080)**, **Twitter/X (1600×900)** o **Facebook (1200×630)** sin distorsionarla. Lo hace recortando centrado (`resize` + `crop`) o ajustando con bandas blancas (`resize` + `paste`). |
+| 2 | `ecualizar_histograma(imagen, ruta_figura)` | Ecualiza el histograma con `cv2.equalizeHist` (en fotos color, solo el brillo: canal Y de YCrCb) y muestra/guarda una figura con la foto original, la ecualizada y sus histogramas. Probada con una foto oscura y otra con exceso de luz. |
 | 3 | `aplicar_filtro(imagen, filtro, ruta_figura)` | Aplica uno de los 9 filtros de Pillow (por número 1-9 o por nombre) y muestra/guarda la original y la filtrada lado a lado. |
-| 4 | `boceto(imagen, tecnica, **parametros)` y `comparar_bocetos(...)` | Boceto de líneas negras sobre fondo blanco con **umbral adaptativo**, **Sobel**, **Laplaciano**, **Canny** o efecto **lápiz**. Parámetros ajustables y comparación lado a lado. |
+| 4 | `boceto(imagen, tecnica, **parametros)` y `comparar_bocetos(...)` | Boceto de líneas negras sobre fondo blanco con **umbral adaptativo**, **Sobel**, **Laplaciano** o **Canny**. Parámetros ajustables y comparación lado a lado. |
 | 5 | `main()` / `menu()` | Menú por consola. Obliga a pasar primero por la función 1 y valida todo con excepciones. Guarda todos los resultados en la carpeta `fotos_mejoradas`. |
 
-**Excepciones propias:** `FotoAppError` (base), `ImagenNoCargadaError`, `RedSocialInvalidaError`, `FiltroInvalidoError` y `TecnicaInvalidaError`. Todas las funciones de edición llaman a `_validar_imagen()`, que lanza `ImagenNoCargadaError` si todavía no se leyó ninguna imagen. Así el usuario no puede saltearse la lectura.
+**Excepciones propias:** `ImagenNoCargadaError`, `RedSocialInvalidaError`, `FiltroInvalidoError` y `TecnicaInvalidaError`. Todas las funciones de edición llaman a `_validar_imagen()`, que lanza `ImagenNoCargadaError` si todavía no se leyó ninguna imagen. Así el usuario no puede saltearse la lectura.
 
 ### Diagrama de flujo del menú
 
