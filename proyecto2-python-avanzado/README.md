@@ -58,38 +58,67 @@ proyecto2-python-avanzado/
 
 ```mermaid
 flowchart TD
-    A([Inicio: python fotoapp.py → main]) --> B[imagen_actual = None]
-    B --> C[/Mostrar menú y leer opción/]
-    C --> D{Opción}
+    A([Inicio: main → menu]) --> B["imagen_actual = None<br/>contador = 0"]
+    B --> C[/"Mostrar menú con<br/>estado de la imagen actual"/]
+    C --> D[/"Leer opción"/]
+    D --> E{¿Qué opción?}
 
-    D -->|0| Z([Salir])
-    D -->|otra| X[Mostrar 'Opción inválida'] --> C
+    E -->|0| Z["Imprimir '¡Hasta luego!'"] --> FIN([Fin])
+    E -->|Otra| INV["Imprimir 'Opción inválida.<br/>Escribí un número del 0 al 5'"] --> C
 
-    D -->|1| E[/Pedir ruta o URL, red social y modo/]
-    E --> F{¿Red social válida?}
-    F -->|No| ERR[Mostrar error] --> C
-    F -->|Sí| G{¿Se pudo leer la imagen?}
-    G -->|No: archivo inexistente, URL caída o no es imagen| ERR
-    G -->|Sí| H[Redimensionar sin distorsión<br/>imagen_actual = resultado<br/>guardar en fotos_mejoradas] --> C
+    %% Opción 1
+    E -->|1| O1A[/"Pedir ruta o URL,<br/>red social y modo"/]
+    O1A --> O1B["normalizar_red<br/>(acepta alias: x, ig, fb, yt)"]
+    O1B --> O1C{¿Red social válida?}
+    O1C -->|No| ERR1["RedSocialInvalidaError"]
+    O1C -->|Sí| O1D{"¿Se puede leer la imagen?<br/>(archivo, Drive o URL)"}
+    O1D -->|"No: archivo inexistente,<br/>URL caída o no es imagen"| ERR2["FileNotFoundError / ValueError / OSError"]
+    O1D -->|Sí| O1E["Redimensionar sin distorsión<br/>(recortar o ajustar con bandas)"]
+    O1E --> O1F["Guardar en carpeta de salida<br/>imagen_actual = resultado"]
+    O1F --> C
 
-    D -->|2, 3, 4 o 5| V{¿imagen_actual cargada?}
-    V -->|No| W[ImagenNoCargadaError:<br/>'Primero usá la opción 1'] --> C
-    V -->|Sí| S{¿Qué opción?}
+    %% Opciones 2 a 5: validación previa
+    E -->|"2, 3, 4 o 5"| V{"¿Hay imagen_actual<br/>cargada?"}
+    V -->|No| ERR3["ImagenNoCargadaError:<br/>'Primero leé la foto con la opción 1'"]
+    V -->|Sí| S{¿Cuál de las cuatro?}
 
-    S -->|2| I[Ecualizar histograma<br/>mostrar y guardar figura<br/>en fotos_mejoradas]
-    S -->|3| J[/Elegir filtro 1-9/] --> J2{¿Filtro válido?}
-    J2 -->|No| ERR
-    J2 -->|Sí| J3[Aplicar filtro<br/>mostrar y guardar figura<br/>en fotos_mejoradas]
-    S -->|4| K[/Elegir técnica de boceto/] --> K2{¿Técnica válida?}
-    K2 -->|No| ERR
-    K2 -->|Sí| K3[Generar boceto<br/>mostrar y guardar figura<br/>en fotos_mejoradas]
-    S -->|5| L[/Pedir nombre de archivo/] --> L2[Guardar imagen_actual en fotos_mejoradas] --> C
+    %% Opción 2
+    S -->|2| O2A["Ecualizar histograma<br/>Guardar y mostrar figura"]
+    O2A --> U{"¿Usar resultado como<br/>imagen actual?"}
 
-    I --> U{¿Usar resultado como imagen actual?}
-    J3 --> U
-    K3 --> U
-    U -->|Sí| U1[imagen_actual = resultado] --> C
+    %% Opción 3
+    S -->|3| O3A[/"Mostrar filtros y pedir número 1-9"/]
+    O3A --> O3B{¿Filtro válido?}
+    O3B -->|No| ERR4["FiltroInvalidoError"]
+    O3B -->|Sí| O3C["Aplicar filtro de Pillow<br/>Guardar y mostrar figura"]
+    O3C --> U
+
+    %% Opción 4
+    S -->|4| O4A[/"Mostrar técnicas y pedir número<br/>(Enter = canny)"/]
+    O4A --> O4B{¿Técnica válida?}
+    O4B -->|No| ERR5["TecnicaInvalidaError"]
+    O4B -->|Sí| O4C["Generar boceto<br/>Guardar y mostrar figura"]
+    O4C --> U
+
+    %% Uso del resultado
+    U -->|Sí| U1["imagen_actual = resultado<br/>Actualizar descripción"] --> C
     U -->|No| C
+
+    %% Opción 5
+    S -->|5| O5A[/"Pedir nombre de archivo<br/>(Enter = automático)"/]
+    O5A --> O5B["Agregar .png si no tiene extensión<br/>Guardar imagen_actual"]
+    O5B --> C
+
+    %% Manejo de errores
+    ERR1 --> MSG["Imprimir '[!] Error: ...'<br/>o '[!] mensaje'"]
+    ERR2 --> MSG
+    ERR3 --> MSG
+    ERR4 --> MSG
+    ERR5 --> MSG
+    MSG --> C
+
+    %% Interrupción
+    D -.->|"Ctrl+C o fin de entrada"| SAL["Imprimir 'Saliendo de fotoapp'"] -.-> FIN
 ```
 
 ### Resultados destacados
