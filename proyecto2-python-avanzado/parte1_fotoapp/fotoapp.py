@@ -256,29 +256,44 @@ def redimensionar_para_red(ruta, red_social, modo="recortar", ruta_salida=None, 
 
 # 2. Ecualización de histograma
 
-def ecualizar_imagen(imagen):
+METODOS_ECUALIZACION = ("global", "clahe")
+
+
+def ecualizar_imagen(imagen, metodo="global"):
     """Devuelve una copia de la imagen con el contraste ecualizado.
 
     cv2.equalizeHist solo funciona en grises, así que en una foto color se
     ecualiza solo el brillo (canal Y de YCrCb) y se dejan los colores como están.
+
+    `metodo`:
+    - 'global' (por defecto): cv2.equalizeHist sobre toda la imagen.
+    - 'clahe': ecualización adaptativa por zonas con límite de contraste
+      (cv2.createCLAHE). Evita el exceso de contraste y de ruido del método global.
     """
     _validar_imagen(imagen)
+    metodo = metodo.strip().lower() if isinstance(metodo, str) else metodo
+    if metodo not in METODOS_ECUALIZACION:
+        raise ValueError(f"Método '{metodo}' inválido. Opciones: {', '.join(METODOS_ECUALIZACION)}.")
     arreglo = np.array(imagen.convert("RGB"))
     ycrcb = cv2.cvtColor(arreglo, cv2.COLOR_RGB2YCrCb)    # separa brillo y color
-    ycrcb[:, :, 0] = cv2.equalizeHist(ycrcb[:, :, 0])     # ecualiza solo el brillo
+    if metodo == "clahe":
+        ycrcb[:, :, 0] = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(ycrcb[:, :, 0])
+    else:
+        ycrcb[:, :, 0] = cv2.equalizeHist(ycrcb[:, :, 0])     # ecualiza solo el brillo
     return Image.fromarray(cv2.cvtColor(ycrcb, cv2.COLOR_YCrCb2RGB))
 
 
-def ecualizar_histograma(imagen, ruta_figura=None, mostrar=None, titulo=""):
+def ecualizar_histograma(imagen, ruta_figura=None, mostrar=None, titulo="", metodo="global"):
     """Ajusta el contraste de la foto con su histograma y grafica el resultado.
 
     Muestra en una misma figura la foto original y la ecualizada, cada una con
-    su histograma. Si se indica `ruta_figura`, guarda la figura.
+    su histograma. Si se indica `ruta_figura`, guarda la figura. `metodo` es
+    'global' o 'clahe' (ver `ecualizar_imagen`).
 
     Devuelve la imagen ecualizada.
     """
     _validar_imagen(imagen)
-    ecualizada = ecualizar_imagen(imagen)
+    ecualizada = ecualizar_imagen(imagen, metodo)
 
     fig, ejes = plt.subplots(2, 2, figsize=(13, 9))
     # Arriba: las dos fotos
@@ -500,8 +515,9 @@ def menu(entrada=input, carpeta_salida=CARPETA_SALIDA, mostrar=True):
             elif opcion == "2":
                 # Ecualizar el histograma
                 _validar_imagen(imagen_actual)
+                metodo = "clahe" if entrada("Método [g]lobal o [c]lahe (Enter = global): ").strip().lower().startswith("c") else "global"
                 ruta_figura = ruta_nueva("ecualizacion")
-                resultado = ecualizar_histograma(imagen_actual, ruta_figura, mostrar=mostrar)
+                resultado = ecualizar_histograma(imagen_actual, ruta_figura, mostrar=mostrar, metodo=metodo)
                 print(f"Figura guardada en {ruta_figura}")
                 if _preguntar_si(entrada, "¿Usar la imagen ecualizada como imagen actual?"):
                     imagen_actual = resultado

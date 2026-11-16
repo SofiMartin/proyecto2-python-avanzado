@@ -105,6 +105,25 @@ def test_ecualizar_aumenta_contraste(imagen):
     assert np.array(ecualizada.convert("L")).std() > np.array(oscura.convert("L")).std()
 
 
+@pytest.mark.parametrize("metodo", ["global", "clahe", " CLAHE "])
+def test_ecualizar_metodos(imagen, metodo):
+    oscura = Image.fromarray((np.array(imagen) * 0.2).astype(np.uint8))
+    ecualizada = fotoapp.ecualizar_imagen(oscura, metodo)
+    assert ecualizada.size == oscura.size
+    assert np.array(ecualizada.convert("L")).std() > np.array(oscura.convert("L")).std()
+
+
+def test_clahe_distinto_de_global(imagen):
+    assert np.array(fotoapp.ecualizar_imagen(imagen, "clahe")).tolist() != \
+        np.array(fotoapp.ecualizar_imagen(imagen, "global")).tolist()
+
+
+@pytest.mark.parametrize("metodo", ["otro", None, 3])
+def test_ecualizar_metodo_invalido(imagen, metodo):
+    with pytest.raises(ValueError):
+        fotoapp.ecualizar_imagen(imagen, metodo)
+
+
 def test_ecualizar_guarda_figura(imagen, tmp_path):
     ruta = tmp_path / "figuras" / "eq.png"
     fotoapp.ecualizar_histograma(imagen, str(ruta), mostrar=False)
@@ -195,7 +214,7 @@ def test_menu_obliga_a_leer_primero(tmp_path, capsys):
 def test_menu_flujo_completo(foto, tmp_path, capsys):
     salida = correr_menu([
         "1", foto, "yt", "",     # leer y redimensionar
-        "2", "s",                # ecualizar y usar resultado
+        "2", "c", "s",           # ecualizar con CLAHE y usar resultado
         "3", "6", "n",           # filtro Emboss
         "4", "", "n",            # boceto canny
         "5", "final",            # guardar
