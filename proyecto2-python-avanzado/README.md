@@ -1,4 +1,4 @@
-# Proyecto 2: Procesamiento de imágenes y modelos de regresión con Python
+# Proyecto 2: fotoapp, procesamiento de imágenes con Python
 
 **Programación Python Avanzada — Tecnicatura Universitaria en Tecnologías de Programación — 2026**
 
@@ -15,6 +15,7 @@ proyecto2-python-avanzado/
 ├── parte1_fotoapp/
 │   ├── fotoapp.py                 # módulo con todas las funciones + menú
 │   ├── fotoapp_testdev.ipynb      # notebook de pruebas
+│   ├── test_fotoapp.py            # tests automáticos (pytest)
 │   ├── fotos_mejoradas/           # resultados del menú (fotos redimensionadas y figuras)
 │   └── imagenes/
 │       ├── originales/            # fotos de prueba (+ CREDITOS.md)
@@ -34,6 +35,13 @@ proyecto2-python-avanzado/
   cd parte1_fotoapp
   python fotoapp.py
   ```
+- **Tests automáticos:**
+  ```bash
+  pip install -r requirements.txt
+  cd parte1_fotoapp
+  pytest
+  ```
+  Cubren los tamaños de cada red social, los dos modos, la validación de entradas, los 9 filtros, las 4 técnicas de boceto, `ImagenNoCargadaError` y el menú completo con respuestas simuladas.
 
 ---
 
@@ -46,6 +54,10 @@ proyecto2-python-avanzado/
 | 3 | `aplicar_filtro(imagen, filtro, ruta_figura)` | Aplica uno de los 9 filtros de Pillow (por número 1-9 o por nombre) y muestra/guarda la original y la filtrada lado a lado. |
 | 4 | `boceto(imagen, tecnica, **parametros)` y `comparar_bocetos(...)` | Boceto de líneas negras sobre fondo blanco con **umbral adaptativo**, **Sobel**, **Laplaciano** o **Canny**. Parámetros ajustables y comparación lado a lado. |
 | 5 | `main()` / `menu()` | Menú por consola. Obliga a pasar primero por la función 1 y valida todo con excepciones. Guarda todos los resultados en la carpeta `fotos_mejoradas`. |
+
+**Imágenes con transparencia:** si la foto es un PNG con transparencia, se pega sobre fondo blanco al leerla (si no, el fondo quedaría negro).
+
+**Mostrar figuras:** el parámetro `mostrar` de las funciones es `None` por defecto: la figura se muestra solo en Jupyter/Colab. Con `True` se muestra siempre y con `False` nunca, por ejemplo al importar el módulo desde un script.
 
 **Excepciones propias:** `ImagenNoCargadaError`, `RedSocialInvalidaError`, `FiltroInvalidoError` y `TecnicaInvalidaError`. Todas las funciones de edición llaman a `_validar_imagen()`, que lanza `ImagenNoCargadaError` si todavía no se leyó ninguna imagen. Así el usuario no puede saltearse la lectura.
 

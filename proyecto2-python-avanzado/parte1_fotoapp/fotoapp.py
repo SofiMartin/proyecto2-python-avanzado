@@ -31,9 +31,7 @@ import numpy as np  # las imágenes se tratan como arrays
 import requests  # para descargar imágenes desde una URL
 from PIL import Image, ImageFilter, ImageOps, UnidentifiedImageError
 
-# ---------------------------------------------------------------------------
 # Excepciones propias
-# ---------------------------------------------------------------------------
 
 class ImagenNoCargadaError(Exception):
     """Se quiso editar una imagen sin haberla leído antes con la función 1."""
@@ -49,11 +47,6 @@ class FiltroInvalidoError(ValueError):
 
 class TecnicaInvalidaError(ValueError):
     """La técnica de boceto pedida no existe."""
-
-
-# ---------------------------------------------------------------------------
-# Constantes
-# ---------------------------------------------------------------------------
 
 # Tamaño recomendado (ancho, alto) en píxeles para cada red social
 DIMENSIONES_REDES = {
@@ -91,9 +84,7 @@ TECNICAS_BOCETO = {
 CARPETA_SALIDA = "fotos_mejoradas"
 
 
-# ---------------------------------------------------------------------------
 # Funciones auxiliares
-# ---------------------------------------------------------------------------
 
 def _validar_imagen(imagen):
     """Lanza ImagenNoCargadaError si `imagen` no es una imagen de Pillow ya leída."""
@@ -111,12 +102,17 @@ def _crear_carpeta_de(ruta_archivo):
         os.makedirs(carpeta, exist_ok=True)
 
 
+def _resolver_mostrar(mostrar):
+    """`None` = automático: se muestra solo en entornos interactivos (Jupyter/Colab)."""
+    return plt.isinteractive() if mostrar is None else mostrar
+
+
 def _guardar_figura(fig, ruta_figura, mostrar):
     """Guarda la figura (si hay ruta) y la muestra o la cierra."""
     if ruta_figura:
         _crear_carpeta_de(ruta_figura)
         fig.savefig(ruta_figura, dpi=100, bbox_inches="tight")
-    if mostrar:
+    if _resolver_mostrar(mostrar):
         plt.show()
     else:
         plt.close(fig)
@@ -136,8 +132,9 @@ def leer_imagen(ruta):
     if not isinstance(ruta, str) or not ruta.strip():
         raise ValueError("La ruta de la imagen debe ser un texto no vacío.")
     ruta = ruta.strip()
+    es_url = ruta.lower().startswith(("http://", "https://"))
 
-    if ruta.lower().startswith(("http://", "https://")):
+    if es_url:
         # Es una URL: descargamos los bytes y los abrimos como archivo
         try:
             respuesta = requests.get(ruta, headers={"User-Agent": "fotoapp/1.0"}, timeout=20)
@@ -159,6 +156,12 @@ def leer_imagen(ruta):
     except UnidentifiedImageError as error:
         raise ValueError(f"'{ruta}' no es un archivo de imagen válido.") from error
     imagen = ImageOps.exif_transpose(imagen)  # respeta la rotación de la cámara
+    if imagen.mode in ("RGBA", "LA", "P") and (imagen.mode != "P" or "transparency" in imagen.info):
+        # Con transparencia: se pega sobre fondo blanco (si no, quedaría negro)
+        imagen = imagen.convert("RGBA")
+        fondo = Image.new("RGB", imagen.size, "white")
+        fondo.paste(imagen, mask=imagen.getchannel("A"))
+        return fondo
     return imagen.convert("RGB")
 
 
@@ -178,7 +181,7 @@ def normalizar_red(red_social):
 # 1. Leer y redimensionar para una red social
 # ---------------------------------------------------------------------------
 
-def redimensionar_para_red(ruta, red_social, modo="recortar", ruta_salida=None, mostrar=False):
+def redimensionar_para_red(ruta, red_social, modo="recortar", ruta_salida=None, mostrar=None):
     """Lee una foto y la redimensiona al tamaño recomendado de una red social.
 
     Parámetros
@@ -195,8 +198,9 @@ def redimensionar_para_red(ruta, red_social, modo="recortar", ruta_salida=None, 
           bandas blancas lo que sobra.
     ruta_salida : str, opcional
         Si se indica, guarda la imagen redimensionada en ese archivo.
-    mostrar : bool
-        Si es True, muestra la original y la redimensionada lado a lado.
+    mostrar : bool o None
+        True muestra la original y la redimensionada lado a lado; False no
+        muestra nada; None (por defecto) muestra solo en Jupyter/Colab.
 
     Devuelve la imagen (PIL.Image.Image) con el tamaño exacto de la red social.
     """
@@ -208,6 +212,8 @@ def redimensionar_para_red(ruta, red_social, modo="recortar", ruta_salida=None, 
     escala_ancho = ancho / original.width
     escala_alto = alto / original.height
 
+    if not isinstance(modo, str):
+        raise TypeError("modo debe ser un texto: 'recortar' o 'ajustar'.")
     modo = modo.strip().lower()
     if modo == "recortar":
         # Usamos la escala MAYOR para que la foto cubra todo el tamaño final
@@ -234,7 +240,7 @@ def redimensionar_para_red(ruta, red_social, modo="recortar", ruta_salida=None, 
         _crear_carpeta_de(ruta_salida)
         resultado.save(ruta_salida)
 
-    if mostrar:
+    if _resolver_mostrar(mostrar):
         _, ejes = plt.subplots(1, 2, figsize=(12, 5))
         ejes[0].imshow(original)
         ejes[0].set_title(f"Original {original.width}x{original.height}")
@@ -248,9 +254,7 @@ def redimensionar_para_red(ruta, red_social, modo="recortar", ruta_salida=None, 
     return resultado
 
 
-# ---------------------------------------------------------------------------
 # 2. Ecualización de histograma
-# ---------------------------------------------------------------------------
 
 def ecualizar_imagen(imagen):
     """Devuelve una copia de la imagen con el contraste ecualizado.
@@ -265,7 +269,7 @@ def ecualizar_imagen(imagen):
     return Image.fromarray(cv2.cvtColor(ycrcb, cv2.COLOR_YCrCb2RGB))
 
 
-def ecualizar_histograma(imagen, ruta_figura=None, mostrar=True, titulo=""):
+def ecualizar_histograma(imagen, ruta_figura=None, mostrar=None, titulo=""):
     """Ajusta el contraste de la foto con su histograma y grafica el resultado.
 
     Muestra en una misma figura la foto original y la ecualizada, cada una con
@@ -298,9 +302,7 @@ def ecualizar_histograma(imagen, ruta_figura=None, mostrar=True, titulo=""):
     return ecualizada
 
 
-# ---------------------------------------------------------------------------
 # 3. Filtros de Pillow
-# ---------------------------------------------------------------------------
 
 def listar_filtros():
     """Devuelve un texto con los 9 filtros numerados (para el menú)."""
@@ -322,7 +324,7 @@ def obtener_filtro(filtro):
     raise FiltroInvalidoError(f"Filtro '{filtro}' inválido. Elegí un número o nombre de:\n{listar_filtros()}")
 
 
-def aplicar_filtro(imagen, filtro, ruta_figura=None, mostrar=True):
+def aplicar_filtro(imagen, filtro, ruta_figura=None, mostrar=None):
     """Aplica uno de los 9 filtros de Pillow a la imagen.
 
     `filtro` puede ser el nombre ('Emboss') o el número (1-9). Muestra la
@@ -347,9 +349,7 @@ def aplicar_filtro(imagen, filtro, ruta_figura=None, mostrar=True):
     return filtrada
 
 
-# ---------------------------------------------------------------------------
 # 4. Boceto de líneas (bordes y contornos)
-# ---------------------------------------------------------------------------
 
 def boceto(imagen, tecnica="canny", grosor=1, **parametros):
     """Devuelve un boceto de líneas negras sobre fondo blanco.
@@ -399,7 +399,7 @@ def boceto(imagen, tecnica="canny", grosor=1, **parametros):
     return Image.fromarray(salida)
 
 
-def comparar_bocetos(imagen, configuraciones, ruta_figura=None, mostrar=True, columnas=3):
+def comparar_bocetos(imagen, configuraciones, ruta_figura=None, mostrar=None, columnas=3):
     """Muestra lado a lado la imagen original y varios bocetos.
 
     `configuraciones` es una lista de diccionarios, por ejemplo:
@@ -434,9 +434,7 @@ def comparar_bocetos(imagen, configuraciones, ruta_figura=None, mostrar=True, co
     return bocetos
 
 
-# ---------------------------------------------------------------------------
 # 5. Menú de opciones
-# ---------------------------------------------------------------------------
 
 OPCIONES_MENU = """
 ================ FOTOAPP ================
@@ -554,7 +552,7 @@ def menu(entrada=input, carpeta_salida=CARPETA_SALIDA, mostrar=True):
 
         except ImagenNoCargadaError as error:
             print(f"[!] {error}")
-        except (ValueError, FileNotFoundError, OSError) as error:
+        except (ValueError, TypeError, FileNotFoundError, OSError) as error:
             print(f"[!] Error: {error}")
         except (KeyboardInterrupt, EOFError):
             print("\nSaliendo de fotoapp.")
