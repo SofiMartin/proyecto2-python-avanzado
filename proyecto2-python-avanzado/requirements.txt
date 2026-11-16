@@ -1,8 +1,5 @@
 numpy
-pandas
 matplotlib
-seaborn
 pillow
 opencv-python
 requests
-scikit-learn
