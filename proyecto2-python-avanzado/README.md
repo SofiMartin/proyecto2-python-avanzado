@@ -15,7 +15,6 @@ proyecto2-python-avanzado/
 ├── parte1_fotoapp/
 │   ├── fotoapp.py                 # módulo con todas las funciones + menú
 │   ├── fotoapp_testdev.ipynb      # notebook de pruebas
-│   ├── test_fotoapp.py            # tests automáticos (pytest)
 │   ├── fotos_mejoradas/           # resultados del menú (fotos redimensionadas y figuras)
 │   └── imagenes/
 │       ├── originales/            # fotos de prueba (+ CREDITOS.md)
@@ -35,13 +34,6 @@ proyecto2-python-avanzado/
   cd parte1_fotoapp
   python fotoapp.py
   ```
-- **Tests automáticos:**
-  ```bash
-  pip install -r requirements.txt
-  cd parte1_fotoapp
-  pytest
-  ```
-  Cubren los tamaños de cada red social, los dos modos, la validación de entradas, los 9 filtros, las 4 técnicas de boceto, `ImagenNoCargadaError` y el menú completo con respuestas simuladas.
 
 ---
 
