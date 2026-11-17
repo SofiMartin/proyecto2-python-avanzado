@@ -55,70 +55,126 @@ proyecto2-python-avanzado/
 
 ### Diagrama de flujo del menú
 
+El flujo se divide en tres diagramas para que se lea bien: el ciclo general del menú, la opción 1 y las opciones 2 a 5. Los colores indican el tipo de paso: verde = inicio o fin, azul = entrada del usuario, amarillo = decisión, gris = proceso, rojo = error o mensaje, violeta = detalle en otro diagrama.
+
+#### 1. Ciclo general
+
 ```mermaid
 flowchart TD
-    A([Inicio: main → menu]) --> B["imagen_actual = None<br/>contador = 0"]
-    B --> C[/"Mostrar menú con<br/>estado de la imagen actual"/]
-    C --> D[/"Leer opción"/]
-    D --> E{¿Qué opción?}
+    INICIO([Inicio: main llama a menu]) --> INIT["imagen_actual = None<br/>contador de archivos = 0"]
+    INIT --> MENU[/"Mostrar el menú con el estado<br/>de la imagen actual"/]
+    MENU --> LEER[/"Leer opción"/]
+    LEER --> OPCION{"¿Qué opción?"}
+    LEER -.->|"Ctrl+C o fin de entrada"| SALIR["Mostrar 'Saliendo de fotoapp'"]
 
-    E -->|0| Z["Imprimir '¡Hasta luego!'"] --> FIN([Fin])
-    E -->|Otra| INV["Imprimir 'Opción inválida.<br/>Escribí un número del 0 al 5'"] --> C
+    OPCION -->|0| CHAU["Mostrar '¡Hasta luego!'"]
+    OPCION -->|otra| INVALIDA["Mostrar 'Opción inválida.<br/>Escribí un número del 0 al 5'"]
+    OPCION -->|1| OP1["Opción 1<br/>Leer y redimensionar<br/>(detalle en el diagrama 2)"]
+    OPCION -->|"2, 3, 4 o 5"| VAL{"¿Hay imagen_actual<br/>cargada?"}
+    VAL -->|Sí| OP25["Opciones 2 a 5<br/>Ecualizar, filtro, boceto o guardar<br/>(detalle en el diagrama 3)"]
+    VAL -->|No| ERR3["ImagenNoCargadaError<br/>'Primero leé la foto con la opción 1'"]
 
-    %% Opción 1
-    E -->|1| O1A[/"Pedir ruta o URL,<br/>red social y modo"/]
-    O1A --> O1B["normalizar_red<br/>(acepta alias: x, ig, fb, yt)"]
-    O1B --> O1C{¿Red social válida?}
-    O1C -->|No| ERR1["RedSocialInvalidaError"]
-    O1C -->|Sí| O1D{"¿Se puede leer la imagen?<br/>(archivo, Drive o URL)"}
-    O1D -->|"No: archivo inexistente,<br/>URL caída o no es imagen"| ERR2["FileNotFoundError / ValueError / OSError"]
-    O1D -->|Sí| O1E["Redimensionar sin distorsión<br/>(recortar o ajustar con bandas)"]
-    O1E --> O1F["Guardar en carpeta de salida<br/>imagen_actual = resultado"]
-    O1F --> C
+    OP1 -->|"Sin errores"| VOLVER([Volver al menú])
+    OP1 -->|"Con error"| ERR["Mostrar '[!] Error: ...'<br/>El programa no se cierra"]
+    OP25 -->|"Sin errores"| VOLVER
+    OP25 -->|"Con error"| ERR
+    ERR3 --> VOLVER
+    ERR --> VOLVER
+    INVALIDA --> VOLVER
+    VOLVER --> MENU
 
-    %% Opciones 2 a 5: validación previa
-    E -->|"2, 3, 4 o 5"| V{"¿Hay imagen_actual<br/>cargada?"}
-    V -->|No| ERR3["ImagenNoCargadaError:<br/>'Primero leé la foto con la opción 1'"]
-    V -->|Sí| S{¿Cuál de las cuatro?}
+    CHAU --> FIN([Fin])
+    SALIR -.-> FIN
 
-    %% Opción 2
-    S -->|2| O2P[/"Pedir método<br/>(g = global, c = clahe, Enter = global)"/]
-    O2P --> O2A["Ecualizar histograma con el método elegido<br/>Guardar y mostrar figura"]
-    O2A --> U{"¿Usar resultado como<br/>imagen actual?"}
+    classDef terminal fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+    classDef decision fill:#fff8e1,stroke:#f9a825,color:#5d4037
+    classDef entrada fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+    classDef error fill:#ffebee,stroke:#c62828,color:#7f1d1d
+    classDef proceso fill:#f5f5f5,stroke:#616161,color:#212121
+    classDef detalle fill:#ede7f6,stroke:#5e35b1,color:#311b92
 
-    %% Opción 3
-    S -->|3| O3A[/"Mostrar filtros y pedir número 1-9"/]
-    O3A --> O3B{¿Filtro válido?}
-    O3B -->|No| ERR4["FiltroInvalidoError"]
-    O3B -->|Sí| O3C["Aplicar filtro de Pillow<br/>Guardar y mostrar figura"]
-    O3C --> U
+    class INICIO,FIN,VOLVER terminal
+    class OPCION,VAL decision
+    class MENU,LEER entrada
+    class ERR,ERR3,INVALIDA,SALIR error
+    class INIT,CHAU proceso
+    class OP1,OP25 detalle
+```
 
-    %% Opción 4
-    S -->|4| O4A[/"Mostrar técnicas y pedir número<br/>(Enter = canny)"/]
-    O4A --> O4B{¿Técnica válida?}
-    O4B -->|No| ERR5["TecnicaInvalidaError"]
-    O4B -->|Sí| O4C["Generar boceto<br/>Guardar y mostrar figura"]
-    O4C --> U
+#### 2. Opción 1: leer y redimensionar
 
-    %% Uso del resultado
-    U -->|Sí| U1["imagen_actual = resultado<br/>Actualizar descripción"] --> C
-    U -->|No| C
+```mermaid
+flowchart TD
+    A[/"Pedir ruta o URL de la imagen,<br/>red social y modo<br/>(Enter = recortar)"/] --> B["normalizar_red<br/>(acepta alias: x, ig, fb, yt)"]
+    B --> C{"¿Red social válida?"}
+    C -->|No| E1["RedSocialInvalidaError"]
+    C -->|Sí| D{"¿Se puede leer la imagen?<br/>(archivo, Drive o URL)"}
+    D -->|"No: archivo inexistente,<br/>URL caída o no es imagen"| E2["FileNotFoundError / ValueError / OSError"]
+    D -->|Sí| F["Redimensionar sin distorsión<br/>(recortar o ajustar con bandas)"]
+    F --> G["Guardar en la carpeta de salida<br/>imagen_actual = resultado"]
+    G --> VOLVER([Volver al menú])
+    E1 --> MSG["Mostrar '[!] Error: ...'"]
+    E2 --> MSG
+    MSG --> VOLVER
 
-    %% Opción 5
-    S -->|5| O5A[/"Pedir nombre de archivo<br/>(Enter = automático)"/]
+    classDef terminal fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+    classDef decision fill:#fff8e1,stroke:#f9a825,color:#5d4037
+    classDef entrada fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+    classDef error fill:#ffebee,stroke:#c62828,color:#7f1d1d
+    classDef proceso fill:#f5f5f5,stroke:#616161,color:#212121
+
+    class VOLVER terminal
+    class C,D decision
+    class A entrada
+    class E1,E2,MSG error
+    class B,F,G proceso
+```
+
+#### 3. Opciones 2 a 5: ecualizar, filtro, boceto y guardar
+
+```mermaid
+flowchart TD
+    START(["Hay una imagen cargada"]) --> ELEGIR{"¿Qué opción?"}
+
+    ELEGIR -->|2| O2A[/"Pedir método<br/>(g = global, c = clahe, Enter = global)"/]
+    O2A --> O2B["Ecualizar el histograma<br/>Guardar y mostrar la figura"]
+
+    ELEGIR -->|3| O3A[/"Mostrar los 9 filtros<br/>y pedir el número"/]
+    O3A --> O3B{"¿Filtro válido?"}
+    O3B -->|No| E4["FiltroInvalidoError"]
+    O3B -->|Sí| O3C["Aplicar el filtro de Pillow<br/>Guardar y mostrar la figura"]
+
+    ELEGIR -->|4| O4A[/"Mostrar las técnicas y pedir el número<br/>(Enter = canny)"/]
+    O4A --> O4B{"¿Técnica válida?"}
+    O4B -->|No| E5["TecnicaInvalidaError"]
+    O4B -->|Sí| O4C["Generar el boceto<br/>Guardar y mostrar la figura"]
+
+    O2B --> USAR{"¿Usar el resultado como<br/>imagen actual?"}
+    O3C --> USAR
+    O4C --> USAR
+    USAR -->|Sí| USAR_SI["imagen_actual = resultado<br/>Actualizar la descripción"]
+    USAR -->|No| OK
+    USAR_SI --> OK([Volver al menú])
+
+    ELEGIR -->|5| O5A[/"Pedir nombre de archivo<br/>(Enter = automático)"/]
     O5A --> O5B["Agregar .png si no tiene extensión<br/>Guardar imagen_actual"]
-    O5B --> C
+    O5B --> OK
 
-    %% Manejo de errores
-    ERR1 --> MSG["Imprimir '[!] Error: ...'<br/>o '[!] mensaje'"]
-    ERR2 --> MSG
-    ERR3 --> MSG
-    ERR4 --> MSG
-    ERR5 --> MSG
-    MSG --> C
+    E4 --> MSG["Mostrar '[!] Error: ...'"]
+    E5 --> MSG
+    MSG --> OK
 
-    %% Interrupción
-    D -.->|"Ctrl+C o fin de entrada"| SAL["Imprimir 'Saliendo de fotoapp'"] -.-> FIN
+    classDef terminal fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20
+    classDef decision fill:#fff8e1,stroke:#f9a825,color:#5d4037
+    classDef entrada fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+    classDef error fill:#ffebee,stroke:#c62828,color:#7f1d1d
+    classDef proceso fill:#f5f5f5,stroke:#616161,color:#212121
+
+    class START,OK terminal
+    class ELEGIR,O3B,O4B,USAR decision
+    class O2A,O3A,O4A,O5A entrada
+    class E4,E5,MSG error
+    class O2B,O3C,O4C,O5B,USAR_SI proceso
 ```
 
 ### Resultados destacados
